@@ -268,8 +268,12 @@ public class AccountController : Controller
 
         ClaimsIdentity identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
+        // IsPersistent = true -> stay logged in even after closing the browser (7 days, set in Program.cs)
+        AuthenticationProperties options = new AuthenticationProperties();
+        options.IsPersistent = true;
+
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                                      new ClaimsPrincipal(identity));
+                                      new ClaimsPrincipal(identity), options);
 
         return GoToDashboard(user.Role);
     }
