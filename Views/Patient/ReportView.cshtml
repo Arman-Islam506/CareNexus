@@ -1,0 +1,12 @@
+@model ReportCheck
+@{
+    ViewData["Title"] = "Report";
+    ViewData["Subtitle"] = "View and print";
+}
+
+<div class="toolbar no-print">
+    <a class="btn btn-outline-teal" asp-action="MyReports">← Back</a>
+    <button class="btn btn-teal" type="button" onclick="window.print()">Print</button>
+</div>
+
+<partial name="_ReportPaper" model="Model" />

@@ -80,6 +80,7 @@ public class DoctorController : Controller
         ViewBag.Patient = _db.GetUser(patientId);
         ViewBag.PreviousVisits = _db.Serials.CountDocuments(s => s.PatientId == patientId && s.DoctorId == myId
                                                               && s.Status == SerialStatus.Done);
+        ViewBag.LatestReport = _db.LatestReportOf(patientId);   // the patient's last report check (or null)
         return View(prescription);
     }
 
@@ -175,5 +176,30 @@ public class DoctorController : Controller
     {
         List<Chamber> chambers = _db.ChambersOf(MyId());
         return View(chambers);
+    }
+
+    // ===================== PATIENT'S REPORT CHECK =====================
+
+    // the doctor can open a saved report check of HIS OWN patient (read-only, printable)
+    public IActionResult PatientReport(string id)
+    {
+        ReportCheck? check = _db.GetReportCheck(id);
+        if (check == null)
+        {
+            TempData["Error"] = "Report not found.";
+            return RedirectToAction("Index");
+        }
+
+        // only if this patient has at least one serial with me
+        string myId = MyId();
+        string patientId = check.PatientId;
+        bool isMyPatient = _db.Serials.CountDocuments(s => s.PatientId == patientId && s.DoctorId == myId) > 0;
+        if (!isMyPatient)
+        {
+            TempData["Error"] = "This is not your patient.";
+            return RedirectToAction("Index");
+        }
+
+        return View(check);
     }
 }

@@ -5,6 +5,7 @@
 
     Serial s = ViewBag.Serial;
     User? p = ViewBag.Patient;
+    ReportCheck? report = ViewBag.LatestReport;
 }
 
 <div class="content-grid">
@@ -59,6 +60,38 @@
         @if (p != null)
         {
             <a class="btn btn-sm btn-outline-teal mt-3" asp-action="PatientHistory" asp-route-search="@p.LoginId">See history</a>
+        }
+
+        <!-- the patient's last report check (from Report Checker) -->
+        <hr />
+        <small class="muted d-block">Latest report check</small>
+        @if (report == null)
+        {
+            <p class="muted mb-0">The patient has not checked any report.</p>
+        }
+        else
+        {
+            <p class="mb-1">
+                @Clock.LongDateTime(report.CreatedAt)
+                @if (report.IsCritical)
+                {
+                    <span class="status status-high ms-1">Very far from normal</span>
+                }
+            </p>
+            <p class="mb-2"><b>@report.Summary</b></p>
+
+            @* show only the values that are not normal *@
+            foreach (ReportFinding f in report.Findings)
+            {
+                if (f.Level == "High" || f.Level == "Low")
+                {
+                    <div class="d-flex justify-content-between small border-bottom py-1">
+                        <span>@f.Test: <b>@f.Value</b> @f.Unit</span>
+                        <span class="status status-@f.Level.ToLower()">@f.Level</span>
+                    </div>
+                }
+            }
+            <a class="btn btn-sm btn-outline-teal mt-3" asp-action="PatientReport" asp-route-id="@report.Id">View full report</a>
         }
     </div>
 </div>

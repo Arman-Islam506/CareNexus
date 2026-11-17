@@ -36,6 +36,7 @@
             <a class="side-link @Active("Patient", "MySerial")" asp-controller="Patient" asp-action="MySerial">My Serial</a>
             <a class="side-link @Active("Patient", "Prescriptions")" asp-controller="Patient" asp-action="Prescriptions">Prescriptions</a>
             <a class="side-link @Active("Patient", "ReportChecker")" asp-controller="Patient" asp-action="ReportChecker">Report Checker</a>
+            <a class="side-link @Active("Patient", "MyReports")@Active("Patient", "ReportView")" asp-controller="Patient" asp-action="MyReports">My Reports</a>
         }
         else if (role == Roles.Doctor)
         {

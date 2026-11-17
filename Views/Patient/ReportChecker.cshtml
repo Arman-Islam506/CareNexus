@@ -3,10 +3,13 @@
     ViewData["Subtitle"] = "Get an initial idea about your report before seeing the doctor";
 
     ReportResult? result = ViewBag.Result;
+    bool readByAi = ViewBag.ReadByAi == true;
+    bool critical = ViewBag.Critical == true;
+    string? explanation = ViewBag.Explanation;
 }
 
 <div class="alert alert-warning">
-    <b>This is not a diagnosis.</b> It only compares values with common adult normal ranges.
+    <b>This is not a diagnosis.</b> It only gives you an idea of your values.
     Always discuss your report with your doctor.
 </div>
 
@@ -15,32 +18,55 @@
     <form class="panel" method="post" asp-action="ReportChecker" enctype="multipart/form-data">
         <h2>Your report</h2>
 
-        <label class="form-label" for="reportFile">Upload report (PDF or image)</label>
-        <input class="form-control" type="file" id="reportFile" name="reportFile" accept=".pdf,image/*" />
-        <small class="muted">Reading the file automatically with AI (Gemini) will be added later.</small>
+        <!-- option 1: upload (AI reads it) -->
+        <label class="form-label" for="reportFile">Upload report (PDF or photo)</label>
+        <input class="form-control" type="file" id="reportFile" name="reportFile" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+        <small class="muted d-block">Max 10 MB.</small>
 
-        <label class="form-label mt-4" for="reportText">Test values from the report — one per line</label>
-        <textarea class="form-control font-monospace" id="reportText" name="reportText" rows="8"
+        <!-- option 2: type the values (no AI) -->
+        <label class="form-label mt-4" for="reportText">Or type the test values — one per line</label>
+        <textarea class="form-control font-monospace" id="reportText" name="reportText" rows="6"
                   placeholder="Hemoglobin 10.5&#10;WBC 12.4&#10;Platelets 210&#10;Fasting sugar 126&#10;Cholesterol 220">@ViewBag.ReportText</textarea>
 
-        <button class="btn btn-teal mt-4" type="submit">Check report</button>
+        <button class="btn btn-teal mt-4" type="submit"
+                onclick="this.disabled=true; this.innerText='Checking... (up to 30 seconds)'; this.form.submit();">
+            Check report
+        </button>
     </form>
 
     <!-- right: the result -->
     <div class="panel">
-        <h2>Result</h2>
+        <h2>Result @if (readByAi) { <small class="status status-checkedin ms-2">Read by AI</small> }</h2>
+
         @if (result == null)
         {
-            <p class="muted">Your result will appear here. Supported tests: Hemoglobin, WBC, Platelets, Fasting sugar, HbA1c,
-                Cholesterol, Triglycerides, Creatinine, SGPT, TSH, Uric acid.</p>
+            <p class="muted">Your result will appear here.</p>
+            <p class="muted small mb-0">Typed values supported: Hemoglobin, WBC, Platelets, Fasting sugar, HbA1c,
+                Cholesterol, Triglycerides, Creatinine, SGPT, TSH, Uric acid. Uploaded reports can have any test.</p>
         }
         else
         {
+            if (critical)
+            {
+                <div class="alert alert-danger">
+                    <b>Some values are very far from normal.</b> Please contact your doctor soon, or go to the hospital
+                    if you feel unwell.
+                </div>
+            }
+
             if (ViewBag.FileName != null)
             {
-                <p class="muted small">File received: @ViewBag.FileName</p>
+                <p class="muted small">File: @ViewBag.FileName</p>
             }
             <p><b>@result.Summary</b></p>
+
+            if (!string.IsNullOrWhiteSpace(explanation))
+            {
+                <div class="finding">
+                    <b>In simple words</b>
+                    <p class="mb-0 mt-1">@explanation</p>
+                </div>
+            }
 
             foreach (ReportFinding f in result.Findings)
             {
@@ -57,6 +83,24 @@
             if (result.NotRecognised.Count > 0)
             {
                 <p class="muted small mt-3 mb-0">Not recognised: @string.Join(", ", result.NotRecognised)</p>
+            }
+
+            string? savedId = ViewBag.SavedId;
+            if (savedId != null)
+            {
+                <div class="d-flex gap-2 mt-3">
+                    <a class="btn btn-sm btn-teal" asp-action="ReportView" asp-route-id="@savedId">Print this result</a>
+                    <a class="btn btn-sm btn-outline-teal" asp-action="MyReports">My Reports</a>
+                </div>
+                <p class="muted small mt-2 mb-0">Saved in My Reports (only the values — your file is not saved).</p>
+            }
+
+            if (readByAi)
+            {
+                <p class="muted small mt-3 mb-0">
+                    Please check the values above against your paper report — the AI can misread a number.
+                    High / Low is decided by CareNexus using the normal range printed on your report.
+                </p>
             }
         }
     </div>

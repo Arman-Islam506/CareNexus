@@ -36,6 +36,7 @@ builder.Services.AddSingleton<Db>();
 builder.Services.AddSingleton<QueueService>();
 builder.Services.AddSingleton<BookingService>();
 builder.Services.AddSingleton<EmailService>();
+builder.Services.AddHttpClient<GeminiService>();   // AI report checker
 
 // Login with cookies
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -44,7 +45,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/Account/Login";               // not logged in -> go here
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/Account/AccessDenied"; // wrong role -> go here
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);     // stay logged in for 8 hours
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);      // stay logged in for 7 days
         options.SlidingExpiration = true;
         options.Cookie.Name = "CareNexus.Auth";
         options.Cookie.HttpOnly = true;                     // JavaScript can't read the cookie

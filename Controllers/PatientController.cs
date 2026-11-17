@@ -14,12 +14,16 @@ public class PatientController : Controller
     private readonly Db _db;
     private readonly QueueService _queue;
     private readonly BookingService _booking;
+    private readonly GeminiService _gemini;
+    private readonly IWebHostEnvironment _env;
 
-    public PatientController(Db db, QueueService queue, BookingService booking)
+    public PatientController(Db db, QueueService queue, BookingService booking, GeminiService gemini, IWebHostEnvironment env)
     {
         _db = db;
         _queue = queue;
         _booking = booking;
+        _gemini = gemini;
+        _env = env;
     }
 
     // the logged-in patient's Id (saved in the login cookie)
@@ -271,22 +275,164 @@ public class PatientController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult ReportChecker(string? reportText, IFormFile? reportFile)
+    [RequestSizeLimit(12 * 1024 * 1024)]   // max 12 MB for the whole form
+    public async Task<IActionResult> ReportChecker(string? reportText, IFormFile? reportFile)
     {
         ViewBag.ReportText = reportText;
 
-        if (reportFile != null)
+        // ---------- A) a file was uploaded -> the AI reads it ----------
+        if (reportFile != null && reportFile.Length > 0)
         {
             ViewBag.FileName = reportFile.FileName;
-        }
 
-        if (string.IsNullOrWhiteSpace(reportText))
-        {
-            TempData["Error"] = "Please type the test values from your report (reading the file with AI comes later).";
+            if (!_gemini.IsSetUp())
+            {
+                TempData["Error"] = "The AI checker is not set up yet (Gemini API key missing). Type the values instead.";
+                return View();
+            }
+
+            // only PDF and photos, max 10 MB
+            string extension = Path.GetExtension(reportFile.FileName).ToLower();
+            string mimeType;
+            if (extension == ".pdf") mimeType = "application/pdf";
+            else if (extension == ".jpg" || extension == ".jpeg") mimeType = "image/jpeg";
+            else if (extension == ".png") mimeType = "image/png";
+            else if (extension == ".webp") mimeType = "image/webp";
+            else
+            {
+                TempData["Error"] = "Please upload a PDF, JPG, PNG or WEBP file.";
+                return View();
+            }
+            if (reportFile.Length > 10 * 1024 * 1024)
+            {
+                TempData["Error"] = "The file must be smaller than 10 MB.";
+                return View();
+            }
+
+            // read the file into memory (we don't save it anywhere)
+            byte[] bytes;
+            using (MemoryStream memory = new MemoryStream())
+            {
+                await reportFile.CopyToAsync(memory);
+                bytes = memory.ToArray();
+            }
+
+            // step 1 + 2: AI reads the values, our code flags High / Low
+            List<ReportFinding>? findings = await _gemini.ReadReport(bytes, mimeType);
+            if (findings == null)
+            {
+                string message = "The AI could not read this file right now. Please try again, or type the values below.";
+                // while testing on our own PC, also show the real error
+                if (_env.IsDevelopment()) message = message + " (" + _gemini.LastError + ")";
+                TempData["Error"] = message;
+                return View();
+            }
+            if (findings.Count == 0)
+            {
+                TempData["Error"] = "No test values were found. Is this a lab report? You can also type the values below.";
+                return View();
+            }
+
+            ReportResult result = new ReportResult();
+            result.Findings = findings;
+            int notNormal = findings.Count(f => f.Level == "High" || f.Level == "Low");
+            result.Summary = notNormal == 0
+                ? "All " + findings.Count + " values the AI found are within the normal range."
+                : notNormal + " of " + findings.Count + " values are outside the normal range. Show this report to your doctor.";
+
+            ViewBag.Result = result;
+            ViewBag.ReadByAi = true;
+            ViewBag.Critical = findings.Any(f => f.IsCritical);
+
+            // step 3: a short explanation in simple words
+            string? explanation = await _gemini.Explain(findings);
+            ViewBag.Explanation = explanation;
+
+            // save it in "My Reports" (values only, not the file)
+            ViewBag.SavedId = SaveReportCheck(result, true, reportFile.FileName, explanation ?? "");
             return View();
         }
 
-        ViewBag.Result = Services.ReportChecker.Check(reportText);
+        // ---------- B) no file -> check the typed values (no AI) ----------
+        if (string.IsNullOrWhiteSpace(reportText))
+        {
+            TempData["Error"] = "Upload your report file, or type the test values.";
+            return View();
+        }
+
+        ReportResult typedResult = Services.ReportChecker.Check(reportText);
+        ViewBag.Result = typedResult;
+
+        // save it too (only if at least one value was understood)
+        if (typedResult.Findings.Count > 0)
+        {
+            ViewBag.SavedId = SaveReportCheck(typedResult, false, "", "");
+        }
         return View();
+    }
+
+    // saves one checked report in the database and returns its Id
+    private string? SaveReportCheck(ReportResult result, bool readByAi, string fileName, string explanation)
+    {
+        ReportCheck check = new ReportCheck();
+        check.PatientId = MyId();
+        check.CreatedAt = Clock.NowText();
+        check.ReadByAi = readByAi;
+        check.FileName = fileName;
+        check.Summary = result.Summary;
+        check.Explanation = explanation;
+        check.Findings = result.Findings;
+        check.NotRecognised = result.NotRecognised;
+        check.IsCritical = result.Findings.Any(f => f.IsCritical);
+
+        _db.ReportChecks.InsertOne(check);
+        return check.Id;
+    }
+
+    // ===================== MY REPORTS (history) =====================
+
+    // list of all my saved report checks, newest first
+    public IActionResult MyReports()
+    {
+        string myId = MyId();
+        List<ReportCheck> list = _db.ReportChecks.Find(r => r.PatientId == myId).ToList();
+        list = list.OrderByDescending(r => r.CreatedAt).ToList();
+        return View(list);
+    }
+
+    // one saved report check, with a Print button
+    public IActionResult ReportView(string id)
+    {
+        ReportCheck? check = _db.GetReportCheck(id);
+
+        // a patient can only see his own reports
+        if (check == null || check.PatientId != MyId())
+        {
+            TempData["Error"] = "Report not found.";
+            return RedirectToAction("MyReports");
+        }
+
+        ViewBag.Patient = _db.GetUser(MyId());
+        return View(check);
+    }
+
+    // delete one saved report check (the patient's right to delete his data)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteReport(string id)
+    {
+        ReportCheck? check = _db.GetReportCheck(id);
+
+        if (check == null || check.PatientId != MyId())
+        {
+            TempData["Error"] = "Report not found.";
+        }
+        else
+        {
+            _db.ReportChecks.DeleteOne(r => r.Id == check.Id);
+            TempData["Success"] = "Report deleted.";
+        }
+
+        return RedirectToAction("MyReports");
     }
 }

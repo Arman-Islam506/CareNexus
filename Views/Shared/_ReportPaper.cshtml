@@ -1,0 +1,71 @@
+@model ReportCheck
+@inject Db Db
+@* The printable report-check "paper". Used by the patient's My Reports page and the doctor's view. *@
+@{
+    User? patient = Db.GetUser(Model.PatientId);
+}
+
+<div class="rx-paper">
+    <header class="rx-head">
+        <div>
+            <h2>Report Check</h2>
+            <div class="muted">@(Model.ReadByAi ? "Values read by AI from the uploaded report" : "Values typed by the patient")</div>
+            @if (Model.FileName != "")
+            {
+                <div class="muted">File: @Model.FileName</div>
+            }
+        </div>
+        <div class="text-end">
+            <b>@HospitalInfo.Name</b>
+            <div class="muted">@HospitalInfo.Address</div>
+            <div class="muted">@Clock.LongDateTime(Model.CreatedAt)</div>
+        </div>
+    </header>
+
+    <div class="rx-patient">
+        <span><small>Patient</small><b>@(patient?.Name ?? "—")</b></span>
+        <span><small>ID</small><b>@(patient?.LoginId ?? "—")</b></span>
+        <span><small>Age</small><b>@(patient?.Age?.ToString() ?? "—")</b></span>
+        <span><small>Gender</small><b>@(string.IsNullOrEmpty(patient?.Gender) ? "—" : patient.Gender)</b></span>
+    </div>
+
+    @if (Model.IsCritical)
+    {
+        <p class="report-critical"><b>Some values are very far from normal.</b> Please contact your doctor soon.</p>
+    }
+
+    <p><b>@Model.Summary</b></p>
+
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr><th>Test</th><th>Result</th><th>Unit</th><th>Normal range</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            @foreach (ReportFinding f in Model.Findings)
+            {
+                <tr>
+                    <td>@f.Test</td>
+                    <td><b>@f.Value</b></td>
+                    <td>@f.Unit</td>
+                    <td>@f.NormalRange</td>
+                    <td><span class="status status-@f.Level.ToLower()">@f.Level</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.NotRecognised.Count > 0)
+    {
+        <p class="muted small">Not recognised: @string.Join(", ", Model.NotRecognised)</p>
+    }
+
+    @if (Model.Explanation != "")
+    {
+        <h6>In simple words</h6>
+        <p class="rx-pre">@Model.Explanation</p>
+    }
+
+    <p class="report-disclaimer">
+        This is not a diagnosis. It only gives an initial idea of the values. Always discuss your report with your doctor.
+    </p>
+</div>

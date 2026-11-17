@@ -13,6 +13,7 @@ public class Db
     public IMongoCollection<Chamber> Chambers;
     public IMongoCollection<Serial> Serials;
     public IMongoCollection<Prescription> Prescriptions;
+    public IMongoCollection<ReportCheck> ReportChecks;      // "My Reports" history
 
     public Db(IMongoDatabase database)
     {
@@ -21,6 +22,7 @@ public class Db
         Chambers = database.GetCollection<Chamber>("Chambers");
         Serials = database.GetCollection<Serial>("Serials");
         Prescriptions = database.GetCollection<Prescription>("Prescriptions");
+        ReportChecks = database.GetCollection<ReportCheck>("ReportChecks");
     }
 
     // MongoDB Ids look like "6735f1c2a4b5c6d7e8f90123".
@@ -52,6 +54,20 @@ public class Db
     {
         if (!IsValidId(id)) return null;
         return Prescriptions.Find(p => p.Id == id).FirstOrDefault();
+    }
+
+    public ReportCheck? GetReportCheck(string? id)
+    {
+        if (!IsValidId(id)) return null;
+        return ReportChecks.Find(r => r.Id == id).FirstOrDefault();
+    }
+
+    // the newest saved report check of one patient (or null)
+    public ReportCheck? LatestReportOf(string patientId)
+    {
+        return ReportChecks.Find(r => r.PatientId == patientId)
+                           .SortByDescending(r => r.CreatedAt)
+                           .FirstOrDefault();
     }
 
     public string UserName(string? id)

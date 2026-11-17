@@ -1,0 +1,12 @@
+@model ReportCheck
+@{
+    ViewData["Title"] = "Patient Report";
+    ViewData["Subtitle"] = "The report check the patient saved (read-only)";
+}
+
+<div class="toolbar no-print">
+    <button class="btn btn-outline-teal" type="button" onclick="history.back()">← Back</button>
+    <button class="btn btn-teal" type="button" onclick="window.print()">Print</button>
+</div>
+
+<partial name="_ReportPaper" model="Model" />

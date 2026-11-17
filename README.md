@@ -14,9 +14,9 @@ IUB CSE internship / final year project.
 ## Features (v6)
 - **Register:** patients sign up and verify their email with a 6-digit code (Gmail SMTP, MailKit)
 - **Login:** pick a role (Patient, Doctor, Assistant, Admin) + ID or email + 4-digit password (BCrypt)
-- **Patient:** dashboard, doctor list by department, take serial (department → doctor → date on a calendar → free 10-min slot → problem), My Serial with live "arrive by" time, cancel, prescriptions (view + print), report checker
+- **Patient:** dashboard, doctor list by department, take serial (department → doctor → date on a calendar → free 10-min slot → problem), My Serial with live "arrive by" time, cancel, prescriptions (view + print), AI report checker (Gemini reads the PDF/photo, CareNexus flags High/Low, Gemini explains in simple words), My Reports (saved report checks: view, print, delete)
 - **Assistant:** add serial for walk-in / phone patients (new account made if needed), print prescription after the visit, live serial queue, Present / Absent (absent once → end of queue, twice → removed), consultation timer, fee entry, today's collections
-- **Doctor:** today's patients with live times and collection, prescription notepad, patient history search, chamber schedule
+- **Doctor:** today's patients with live times and collection, prescription notepad, patient history search, chamber schedule, sees the patient's latest report check on the prescription page
 - **Admin:** dashboard by department, users (add doctor / assistant), departments, chamber schedules
 - Starting data (5 departments, 5 doctors with 2 chambers each, 5 assistants) is added automatically on first run
 
@@ -50,7 +50,6 @@ CareNexus is sold to one hospital at a time. Change the hospital's name, address
 `appsettings.json` → `"Hospital"` (no code changes). Many hospitals in one system is future work.
 
 ## Still to do
-- AI report checker with Gemini (PDF / image)
 - Notifications, Azure deploy
 
 ## Run it locally
@@ -60,6 +59,7 @@ CareNexus is sold to one hospital at a time. Change the hospital's name, address
    {
      "MongoDb": { "ConnectionString": "<atlas connection string>", "DatabaseName": "CareNexusDb" },
      "Email":   { "From": "<gmail address>", "AppPassword": "<16-letter gmail app password>" },
+     "Gemini":  { "ApiKey": "<key from aistudio.google.com>" },
      "Admin":   { "Email": "<admin email>", "Password": "<admin password>" }
    }
    ```

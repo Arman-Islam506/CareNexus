@@ -12,6 +12,7 @@ public class ReportFinding
     public string NormalRange { get; set; } = "";
     public string Level { get; set; } = "";      // Low / Normal / High
     public string Note { get; set; } = "";
+    public bool IsCritical { get; set; }             // very far from normal
 }
 
 // The full answer of the report checker
@@ -127,7 +128,7 @@ public static class ReportChecker
         return result;
     }
 
-    private static TestRule? FindRule(string name)
+    public static TestRule? FindRule(string name)
     {
         // exact name first
         foreach (TestRule rule in Rules)

@@ -117,13 +117,36 @@ body {
     border-bottom: 1px solid var(--line);
 }
 
-.topbar h1 { margin: 0 0 3px; font-size: 24px; font-weight: 750; }
-.topbar p { margin: 0; color: var(--muted); font-size: 13px; }
+    .topbar h1 {
+        margin: 0 0 3px;
+        font-size: 24px;
+        font-weight: 750;
+    }
 
-.user-chip { display: flex; align-items: center; gap: 10px; }
-.user-chip b, .user-chip small { display: block; }
-.user-chip b { font-size: 13px; }
-.user-chip small { font-size: 11px; color: var(--muted); }
+    .topbar p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .user-chip b, .user-chip small {
+        display: block;
+    }
+
+    .user-chip b {
+        font-size: 13px;
+    }
+
+    .user-chip small {
+        font-size: 11px;
+        color: var(--muted);
+    }
 
 .page-content { max-width: 1500px; margin: auto; padding: 28px 32px; }
 
@@ -475,3 +498,8 @@ body {
     body { background: #fff; }
     .rx-paper { border: 0; max-width: none; }
 }
+
+/* ---------- Report check paper (My Reports) ---------- */
+
+.report-critical { padding: 10px 14px; border-radius: 8px; background: #fee2e2; color: var(--danger); }
+.report-disclaimer { margin-top: 18px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--muted); }
