@@ -1,0 +1,84 @@
+@model List<QueueRow>
+@{
+    ViewData["Title"] = "Today's Patients";
+    Chamber? chamber = ViewBag.Chamber;
+    ViewData["Subtitle"] = chamber == null ? "No chamber on this day" : HospitalInfo.Name + " · " + chamber.Title();
+
+    int todayTotal = ViewBag.TodayTotal;
+
+    // numbers for the boxes
+    int total = Model.Count;
+    int done = Model.Count(r => r.Serial.Status == SerialStatus.Done);
+    int waiting = Model.Count(r => r.Serial.Status == SerialStatus.Waiting || r.Serial.Status == SerialStatus.Present);
+    int chamberMoney = Model.Sum(r => r.Serial.Fee ?? 0);
+    QueueRow? inRoom = Model.FirstOrDefault(r => r.Serial.Status == SerialStatus.InRoom);
+}
+
+<!-- reload every 20 seconds so the doctor sees the assistant's changes -->
+<div data-auto-refresh="20"></div>
+
+<partial name="_ChamberPicker" />
+
+@if (chamber == null)
+{
+    <div class="panel muted">You have no chamber on this day. See <a asp-action="Schedule">Chamber Schedule</a>.</div>
+    <partial name="_UpcomingDays" />
+    return;
+}
+
+<div class="stats-grid">
+    <div class="stat-card"><span>Patients</span><strong>@total</strong><small>Booked in this chamber</small></div>
+    <div class="stat-card"><span>Completed</span><strong>@done</strong><small>@waiting waiting</small></div>
+    <div class="stat-card"><span>This chamber</span><strong>@Clock.Taka(chamberMoney)</strong><small>Collected by assistant</small></div>
+    <div class="stat-card"><span>Today total</span><strong>@Clock.Taka(todayTotal)</strong><small>All chambers</small></div>
+</div>
+
+@if (inRoom != null)
+{
+    <partial name="_LiveTimer" model="inRoom" />
+}
+
+<div class="panel">
+    <div class="panel-heading">
+        <h2>Serial list</h2>
+        <small class="muted">Refreshes every 20 seconds</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Serial</th><th>Patient</th><th>Problem</th><th>Booked</th><th>Estimated</th>
+                    <th>Status</th><th>Time taken</th><th>Fee</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (QueueRow row in Model)
+                {
+                    Serial s = row.Serial;
+                    <tr class="@(s.Status == SerialStatus.InRoom ? "row-active" : "")">
+                        <td><b>#@s.SerialNo.ToString("00")</b></td>
+                        <td>@row.PatientName<small class="d-block muted">ID @row.PatientLoginId · @row.PatientPhone</small></td>
+                        <td>@s.Problem</td>
+                        <td>@Clock.AmPm(s.SlotTime)</td>
+                        <td>@(row.Estimated == null ? "—" : Clock.AmPm(row.Estimated.Value))</td>
+                        <td><span class="@s.CssClass()">@s.Label()</span></td>
+                        <td>@(s.MinutesTaken() == null ? "—" : s.MinutesTaken() + " min")</td>
+                        <td>@Clock.Taka(s.Fee)</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm @(row.HasPrescription ? "btn-outline-teal" : "btn-teal")"
+                               asp-action="Prescription" asp-route-serialId="@s.Id">
+                                @(row.HasPrescription ? "Edit Rx" : "Prescribe")
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="9" class="muted text-center py-4">No serials booked yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_UpcomingDays" />

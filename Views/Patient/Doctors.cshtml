@@ -1,0 +1,68 @@
+@model List<User>
+@inject Db Db
+@{
+    ViewData["Title"] = "Doctors";
+    ViewData["Subtitle"] = "Find a doctor by department";
+
+    List<Department> departments = ViewBag.Departments;
+    string? selectedDept = ViewBag.DepartmentId;
+}
+
+<!-- search + department filter -->
+<form class="toolbar" method="get">
+    <input class="form-control search" name="search" value="@ViewBag.Search" placeholder="Search doctor name" />
+    <select class="form-select filter" name="departmentId" onchange="this.form.submit()">
+        <option value="">All departments</option>
+        @foreach (Department d in departments)
+        {
+            if (d.Id == selectedDept)
+            {
+                <option value="@d.Id" selected>@d.Name</option>
+            }
+            else
+            {
+                <option value="@d.Id">@d.Name</option>
+            }
+        }
+    </select>
+    <button class="btn btn-teal" type="submit">Search</button>
+</form>
+
+@if (Model.Count == 0)
+{
+    <div class="panel muted">No doctors found.</div>
+}
+
+<!-- one card per doctor -->
+<div class="doctor-grid">
+    @foreach (User d in Model)
+    {
+        <div class="panel doctor-card">
+            @if (d.PhotoUrl != "")
+            {
+                <img class="avatar avatar-lg avatar-photo" src="@d.PhotoUrl" alt="@d.Name" />
+            }
+            else
+            {
+                <span class="avatar avatar-lg">@d.FirstLetter()</span>
+            }
+            <h3>@d.Name</h3>
+            <span class="muted">@Db.DepartmentName(d.DepartmentId)</span>
+            <small class="muted d-block mt-1">@d.Degree · @d.ExperienceYears yrs experience</small>
+            <p><b>Fee: @Clock.Taka(d.Fee)</b></p>
+
+            <div class="chamber-list">
+                @foreach (Chamber c in Db.ChambersOf(d.Id!))
+                {
+                    <div>
+                        <b>@(c.Room == "" ? "Chamber" : c.Room)</b>
+                        <small>@c.DaysText() · @c.TimeText()</small>
+                    </div>
+                }
+            </div>
+
+            <a class="btn btn-outline-teal w-100 mt-3" asp-action="TakeSerial"
+               asp-route-departmentId="@d.DepartmentId" asp-route-doctorId="@d.Id">Take serial</a>
+        </div>
+    }
+</div>

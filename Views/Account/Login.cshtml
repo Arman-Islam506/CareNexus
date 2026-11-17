@@ -1,0 +1,81 @@
+@model LoginViewModel
+@{
+    Layout = "_LoginLayout";
+    ViewData["Title"] = "Log in";
+}
+
+<div class="login-shell">
+
+    <!-- left side: about CareNexus -->
+    <section class="login-brand">
+        <div class="brand">
+            <span class="login-logo"><partial name="_LogoMark" model="40" /></span>
+            <span>Care<span class="brand-accent">Nexus</span></span>
+        </div>
+        <p class="login-title">Smart Healthcare Management Platform<br />with AI-Based Medical Report Analysis</p>
+        <p><b>@HospitalInfo.Name</b> · @HospitalInfo.Address</p>
+        <h1>Connected care.<br />Less waiting.</h1>
+        <p>An AI-powered healthcare platform that connects patients, doctors, assistants and hospital admins in one place.</p>
+        <ul>
+            <li>Online serial with live estimated time</li>
+            <li>Digital prescriptions with print</li>
+            <li>AI-assisted report analysis</li>
+            <li>One system for patient, doctor, assistant and admin</li>
+        </ul>
+    </section>
+
+    <!-- right side: login form -->
+    <section class="login-panel">
+        <form class="login-card" method="post" asp-action="Login">
+            <h2>Welcome</h2>
+            <p class="muted">Choose who you are and log in</p>
+
+            <partial name="_Alerts" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+            <!-- 4 role buttons (only one can be picked) -->
+            <label class="form-label">I am a</label>
+            <div class="role-pills mb-3">
+                <input type="radio" class="btn-check" name="Role" id="role-patient" value="Patient" checked="@(Model.Role == "Patient")" />
+                <label for="role-patient">Patient</label>
+
+                <input type="radio" class="btn-check" name="Role" id="role-doctor" value="Doctor" checked="@(Model.Role == "Doctor")" />
+                <label for="role-doctor">Doctor</label>
+
+                <input type="radio" class="btn-check" name="Role" id="role-assistant" value="Assistant" checked="@(Model.Role == "Assistant")" />
+                <label for="role-assistant">Assistant</label>
+
+                <input type="radio" class="btn-check" name="Role" id="role-admin" value="Admin" checked="@(Model.Role == "Admin")" />
+                <label for="role-admin">Admin</label>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Login" class="form-label"></label>
+                <input asp-for="Login" class="form-control" placeholder="e.g. 101 or patient101@carenexus.com" />
+                <span asp-validation-for="Login" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" inputmode="numeric" maxlength="4" placeholder="4 digits" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <button class="btn btn-teal w-100" type="submit">Log in</button>
+
+            <!-- demo accounts for testing (remove this box before giving the app to a real hospital) -->
+            <div class="demo-box mt-3">
+                <b>Demo accounts</b> — password for all: <b>1234</b><br />
+                Patient ID: 101, 102, 103<br />
+                Doctor ID: 201 – 205<br />
+                Assistant ID: 301 – 305<br />
+                Admin ID: 901
+            </div>
+            <p class="muted small mt-1 mb-0 text-center">
+                New patient? <a asp-action="Register">Create an account</a>
+            </p>
+        </form>
+    </section>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

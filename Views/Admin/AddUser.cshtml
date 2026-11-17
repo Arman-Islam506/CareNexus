@@ -1,0 +1,94 @@
+@{
+    ViewData["Title"] = "Add User";
+    ViewData["Subtitle"] = "Add a doctor or an assistant";
+    List<Department> departments = ViewBag.Departments;
+    List<User> doctors = ViewBag.Doctors;
+}
+
+<div class="panel form-panel">
+    <form method="post" asp-action="AddUser">
+
+        <label class="form-label">Role</label>
+        <div class="role-pills mb-3">
+            <input type="radio" class="btn-check" name="role" id="role-doctor" value="Doctor" checked onchange="showFields()" />
+            <label for="role-doctor">Doctor</label>
+            <input type="radio" class="btn-check" name="role" id="role-assistant" value="Assistant" onchange="showFields()" />
+            <label for="role-assistant">Assistant</label>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="name">Full name</label>
+                <input class="form-control" id="name" name="name" required placeholder="Dr. Full Name" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="email">Email</label>
+                <input class="form-control" id="email" name="email" type="email" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="phone">Phone</label>
+                <input class="form-control" id="phone" name="phone" placeholder="01XXXXXXXXX" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="password">Password — 4 digits <span class="muted">(empty = 1234)</span></label>
+                <input class="form-control" id="password" name="password" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" />
+            </div>
+        </div>
+
+        <!-- only for doctors -->
+        <div id="doctor-fields" class="row g-3 mt-1">
+            <div class="col-md-6">
+                <label class="form-label" for="departmentId">Department</label>
+                <select class="form-select" id="departmentId" name="departmentId">
+                    <option value="">Select department</option>
+                    @foreach (Department d in departments)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="degree">Degree</label>
+                <input class="form-control" id="degree" name="degree" placeholder="MBBS, FCPS" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="experienceYears">Experience (years)</label>
+                <input class="form-control" id="experienceYears" name="experienceYears" type="number" min="0" value="0" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="fee">Consultation fee (৳)</label>
+                <input class="form-control" id="fee" name="fee" type="number" min="0" value="500" />
+            </div>
+        </div>
+
+        <!-- only for assistants -->
+        <div id="assistant-fields" class="row g-3 mt-1" style="display:none">
+            <div class="col-md-6">
+                <label class="form-label" for="doctorId">Works for doctor</label>
+                <select class="form-select" id="doctorId" name="doctorId">
+                    <option value="">Select doctor</option>
+                    @foreach (User d in doctors)
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button class="btn btn-teal" type="submit">Add user</button>
+            <a class="btn btn-outline-teal" asp-action="Users">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // show doctor fields or assistant fields, depending on the role button
+        function showFields() {
+            var isDoctor = document.getElementById('role-doctor').checked;
+            document.getElementById('doctor-fields').style.display = isDoctor ? '' : 'none';
+            document.getElementById('assistant-fields').style.display = isDoctor ? 'none' : '';
+        }
+    </script>
+}

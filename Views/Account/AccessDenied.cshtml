@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "Access denied";
+    ViewData["Subtitle"] = "This page belongs to another role";
+}
+
+<div class="panel text-center py-5">
+    <h2>You don't have access to this page</h2>
+    <p class="muted">Log out and log in with the correct account.</p>
+    <a class="btn btn-teal" asp-controller="Account" asp-action="Login">Go to my dashboard</a>
+</div>

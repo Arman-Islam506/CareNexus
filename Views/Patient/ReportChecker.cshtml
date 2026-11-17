@@ -1,0 +1,63 @@
+@{
+    ViewData["Title"] = "Report Checker";
+    ViewData["Subtitle"] = "Get an initial idea about your report before seeing the doctor";
+
+    ReportResult? result = ViewBag.Result;
+}
+
+<div class="alert alert-warning">
+    <b>This is not a diagnosis.</b> It only compares values with common adult normal ranges.
+    Always discuss your report with your doctor.
+</div>
+
+<div class="content-grid">
+    <!-- left: the form -->
+    <form class="panel" method="post" asp-action="ReportChecker" enctype="multipart/form-data">
+        <h2>Your report</h2>
+
+        <label class="form-label" for="reportFile">Upload report (PDF or image)</label>
+        <input class="form-control" type="file" id="reportFile" name="reportFile" accept=".pdf,image/*" />
+        <small class="muted">Reading the file automatically with AI (Gemini) will be added later.</small>
+
+        <label class="form-label mt-4" for="reportText">Test values from the report — one per line</label>
+        <textarea class="form-control font-monospace" id="reportText" name="reportText" rows="8"
+                  placeholder="Hemoglobin 10.5&#10;WBC 12.4&#10;Platelets 210&#10;Fasting sugar 126&#10;Cholesterol 220">@ViewBag.ReportText</textarea>
+
+        <button class="btn btn-teal mt-4" type="submit">Check report</button>
+    </form>
+
+    <!-- right: the result -->
+    <div class="panel">
+        <h2>Result</h2>
+        @if (result == null)
+        {
+            <p class="muted">Your result will appear here. Supported tests: Hemoglobin, WBC, Platelets, Fasting sugar, HbA1c,
+                Cholesterol, Triglycerides, Creatinine, SGPT, TSH, Uric acid.</p>
+        }
+        else
+        {
+            if (ViewBag.FileName != null)
+            {
+                <p class="muted small">File received: @ViewBag.FileName</p>
+            }
+            <p><b>@result.Summary</b></p>
+
+            foreach (ReportFinding f in result.Findings)
+            {
+                <div class="finding finding-@f.Level.ToLower()">
+                    <div class="d-flex justify-content-between">
+                        <b>@f.Test</b>
+                        <span class="status status-@f.Level.ToLower()">@f.Level</span>
+                    </div>
+                    <div>@f.Value @f.Unit <small class="muted">(normal @f.NormalRange)</small></div>
+                    <small>@f.Note</small>
+                </div>
+            }
+
+            if (result.NotRecognised.Count > 0)
+            {
+                <p class="muted small mt-3 mb-0">Not recognised: @string.Join(", ", result.NotRecognised)</p>
+            }
+        }
+    </div>
+</div>

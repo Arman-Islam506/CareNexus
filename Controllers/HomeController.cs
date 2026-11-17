@@ -1,25 +1,20 @@
+using System.Diagnostics;
 using CareNexus.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 
-namespace CareNexus.Controllers
+namespace CareNexus.Controllers;
+
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    // The website's first page sends everyone to the login page
+    public IActionResult Index()
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
+        return RedirectToAction("Login", "Account");
+    }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }

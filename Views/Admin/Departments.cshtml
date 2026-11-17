@@ -1,0 +1,40 @@
+@model List<Department>
+@inject Db Db
+@using MongoDB.Driver
+@{
+    ViewData["Title"] = "Departments";
+    ViewData["Subtitle"] = "Hospital departments";
+}
+
+<div class="content-grid">
+    <div class="panel">
+        <h2>All departments</h2>
+        <table class="table align-middle">
+            <thead><tr><th>Name</th><th>Doctors</th><th></th></tr></thead>
+            <tbody>
+                @foreach (Department d in Model)
+                {
+                    string deptId = d.Id!;
+                    long doctorCount = Db.Users.CountDocuments(u => u.Role == Roles.Doctor && u.DepartmentId == deptId);
+                    <tr>
+                        <td><b>@d.Name</b></td>
+                        <td>@doctorCount</td>
+                        <td class="text-end">
+                            <form method="post" asp-action="DeleteDepartment" onsubmit="return confirm('Delete this department?');">
+                                <input type="hidden" name="id" value="@d.Id" />
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <form class="panel" method="post" asp-action="AddDepartment">
+        <h2>Add department</h2>
+        <label class="form-label" for="name">Name</label>
+        <input class="form-control" id="name" name="name" required placeholder="e.g. Neurology" />
+        <button class="btn btn-teal mt-3" type="submit">Add</button>
+    </form>
+</div>

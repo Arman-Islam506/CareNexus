@@ -1,0 +1,111 @@
+@{
+    ViewData["Title"] = "Add Serial";
+    User doctor = ViewBag.Doctor;
+    ViewData["Subtitle"] = "For a patient who comes to the desk or calls — " + doctor.Name;
+
+    string day = ViewBag.Date;
+    string minDate = ViewBag.MinDate;
+    string maxDate = ViewBag.MaxDate;
+    List<Chamber> chambers = ViewBag.Chambers;
+    Chamber? chamber = ViewBag.Chamber;
+    List<string> freeSlots = ViewBag.FreeSlots;
+}
+
+<div class="panel form-panel">
+
+    @* Step 1: day and chamber (the page reloads to show the free slots) *@
+    <form method="get" asp-action="AddSerial" class="row g-3">
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="date">1. Date</label>
+            <input class="form-control" type="date" id="date" name="date"
+                   value="@day" min="@minDate" max="@maxDate" onchange="this.form.submit()" />
+        </div>
+
+        @if (chambers.Count > 1)
+        {
+            <div class="col-md-6 col-lg-4">
+                <label class="form-label">Chamber</label>
+                <select class="form-select" name="chamberId" onchange="this.form.submit()">
+                    @foreach (Chamber c in chambers)
+                    {
+                        if (chamber != null && c.Id == chamber.Id)
+                        {
+                            <option value="@c.Id" selected>@c.Title()</option>
+                        }
+                        else
+                        {
+                            <option value="@c.Id">@c.Title()</option>
+                        }
+                    }
+                </select>
+            </div>
+        }
+    </form>
+
+    @if (chamber == null)
+    {
+        <p class="text-danger mt-3">@doctor.Name has no chamber on @Clock.LongDate(day). Please pick another day.</p>
+    }
+    else
+    {
+        <p class="muted mt-3 mb-0">@Clock.LongDate(day) · @chamber.Title()</p>
+        <hr class="my-4" />
+
+        <form method="post" asp-action="AddSerial">
+            <input type="hidden" name="date" value="@day" />
+            <input type="hidden" name="chamberId" value="@chamber.Id" />
+
+            @* Step 2: who is the patient *@
+            <label class="form-label">2. Patient</label>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="panel h-100 mb-0">
+                        <b>Already has an account</b>
+                        <input class="form-control mt-2" name="patientSearch" placeholder="Patient ID (e.g. 104) or phone" />
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="panel h-100 mb-0">
+                        <b>New patient</b> <small class="muted">(an account is made, password 1234)</small>
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-6">
+                                <input class="form-control" name="newName" placeholder="Full name" />
+                            </div>
+                            <div class="col-md-6">
+                                <input class="form-control" name="newPhone" placeholder="Phone, e.g. 01XXXXXXXXX" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Step 3: time slot *@
+            <label class="form-label mt-4">3. Free time slot (@QueueService.SlotMinutes min each)</label>
+            @if (freeSlots.Count == 0)
+            {
+                <p class="muted">No free slots left on this day. Please pick another date.</p>
+            }
+            else
+            {
+                <div class="slot-grid">
+                    @foreach (string t in freeSlots)
+                    {
+                        string id = "slot-" + t.Replace(":", "");
+                        <input type="radio" class="btn-check" name="slot" id="@id" value="@t" required />
+                        <label class="slot" for="@id">@Clock.AmPm(t)</label>
+                    }
+                </div>
+
+                @* Step 4: problem *@
+                <label class="form-label mt-4" for="problem">4. Problem</label>
+                <textarea class="form-control" id="problem" name="problem" rows="2" maxlength="300" required
+                          placeholder="e.g. Fever and cough"></textarea>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-teal" type="submit">Add serial</button>
+                    <a class="btn btn-outline-teal" asp-action="Index" asp-route-date="@day">Cancel</a>
+                </div>
+            }
+        </form>
+    }
+</div>

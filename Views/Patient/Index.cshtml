@@ -1,0 +1,91 @@
+@model User
+@inject Db Db
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Subtitle"] = "Your profile and upcoming visit";
+
+    Serial? next = ViewBag.NextSerial;
+    User? nextDoctor = next != null ? Db.GetUser(next.DoctorId) : null;
+    Chamber? nextChamber = next != null ? Db.GetChamber(next.ChamberId) : null;
+}
+
+<!-- 3 boxes at the top -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span>Upcoming serial</span>
+        <strong>@(next == null ? "—" : "#" + next.SerialNo)</strong>
+        <small>@(nextDoctor != null ? nextDoctor.Name : "No serial booked")</small>
+    </div>
+    <div class="stat-card">
+        <span>Prescriptions</span>
+        <strong>@ViewBag.PrescriptionCount</strong>
+        <small>From your doctors</small>
+    </div>
+    <div class="stat-card">
+        <span>Completed visits</span>
+        <strong>@ViewBag.VisitCount</strong>
+        <small>All time</small>
+    </div>
+</div>
+
+<div class="content-grid">
+    <!-- profile -->
+    <div class="panel">
+        <div class="panel-heading">
+            <h2>Profile details</h2>
+            <a asp-controller="Profile" asp-action="Edit">Edit profile</a>
+        </div>
+        <div class="profile-row">
+            @if (Model.PhotoUrl != "")
+            {
+                <img class="avatar avatar-lg avatar-photo" src="@Model.PhotoUrl" alt="@Model.Name" />
+            }
+            else
+            {
+                <span class="avatar avatar-lg">@Model.FirstLetter()</span>
+            }
+            <div>
+                <h3>@Model.Name</h3>
+                <span class="muted">Patient ID: @Model.LoginId · since @Model.CreatedAt.ToString("dd MMM yyyy")</span>
+            </div>
+        </div>
+        <div class="detail-grid">
+            <div><small>Age</small><b>@(Model.Age == null ? "—" : Model.Age + " years")</b></div>
+            <div><small>Gender</small><b>@(Model.Gender == "" ? "—" : Model.Gender)</b></div>
+            <div><small>Blood group</small><b>@(Model.BloodGroup == "" ? "—" : Model.BloodGroup)</b></div>
+            <div><small>Phone</small><b>@(Model.Phone == "" ? "—" : Model.Phone)</b></div>
+            <div><small>Email</small><b>@Model.Email</b></div>
+            <div><small>City</small><b>@(Model.City == "" ? "—" : Model.City)</b></div>
+        </div>
+    </div>
+
+    <!-- right side -->
+    <div class="stack">
+        <div class="panel">
+            <h2>Next serial</h2>
+            @if (next != null)
+            {
+                <div class="doctor-row">
+                    <div class="avatar">DR</div>
+                    <div>
+                        <b>@nextDoctor?.Name</b>
+                        <small>@(nextChamber != null ? nextChamber.Title() : "") · Serial #@next.SerialNo</small>
+                    </div>
+                </div>
+                <p class="muted">@Clock.NiceDate(next.Date) · booked @Clock.AmPm(next.SlotTime)</p>
+                <a class="btn btn-teal w-100" asp-action="MySerial" asp-route-id="@next.Id">View live serial</a>
+            }
+            else
+            {
+                <p class="muted">You have no upcoming serial.</p>
+                <a class="btn btn-teal w-100" asp-action="TakeSerial">Take a serial</a>
+            }
+        </div>
+
+        <div class="panel">
+            <h2>Quick actions</h2>
+            <a class="btn btn-outline-teal w-100 mb-2" asp-action="TakeSerial">Take a new serial</a>
+            <a class="btn btn-outline-teal w-100" asp-action="ReportChecker">Check a report</a>
+        </div>
+    </div>
+</div>

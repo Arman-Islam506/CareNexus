@@ -1,47 +1,64 @@
-﻿<!DOCTYPE html>
+﻿@inject Db Db
+@{
+    // values that every page can set at the top
+    string title = ViewData["Title"] as string ?? "Dashboard";
+    string subtitle = ViewData["Subtitle"] as string ?? "";
+
+    // who is logged in (read from the database, so a new name or photo shows at once)
+    User? me = Db.GetUser(User.FindFirstValue(ClaimTypes.NameIdentifier));
+    string userName = me != null ? me.Name : (User.Identity?.Name ?? "Guest");
+    string role = User.FindFirstValue(ClaimTypes.Role) ?? "";
+    string firstLetter = me != null ? me.FirstLetter() : "?";
+    string photoUrl = me != null ? me.PhotoUrl : "";
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - CareNexus</title>
-    <script type="importmap"></script>
+    <title>@title - CareNexus</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/favicon.svg" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/CareNexus.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/healthcare.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">CareNexus</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+<body class="app-body">
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - CareNexus - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <!-- left menu -->
+    <partial name="_Sidebar" />
+
+    <main class="main-area">
+        <!-- top bar: page title + logged in user -->
+        <header class="topbar">
+            <div>
+                <h1>@title</h1>
+                @if (subtitle != "")
+                {
+                    <p>@subtitle</p>
+                }
+            </div>
+            <a class="user-chip text-decoration-none text-reset" asp-controller="Profile" asp-action="Index" title="My profile">
+                @if (photoUrl != "")
+                {
+                    <img class="avatar avatar-photo" src="@photoUrl" alt="@userName" />
+                }
+                else
+                {
+                    <span class="avatar">@firstLetter</span>
+                }
+                <span>
+                    <b>@userName</b>
+                    <small>@role portal@(me != null && me.LoginId != "" ? " · ID " + me.LoginId : "")</small>
+                </span>
+            </a>
+        </header>
+
+        <!-- the page itself -->
+        <section class="page-content">
+            <partial name="_Alerts" />
+            @RenderBody()
+        </section>
+    </main>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

@@ -1,0 +1,166 @@
+@inject Db Db
+@{
+    ViewData["Title"] = "Take Serial";
+    ViewData["Subtitle"] = "Choose department, doctor, a date on the calendar, then a free time slot";
+
+    List<Department> departments = ViewBag.Departments;
+    List<User> doctors = ViewBag.Doctors;
+    List<Chamber> dayChambers = ViewBag.DayChambers;
+    List<string> freeSlots = ViewBag.FreeSlots;
+    User? selectedDoctor = ViewBag.SelectedDoctor;
+    Chamber? chamber = ViewBag.Chamber;
+
+    string? departmentId = ViewBag.DepartmentId;
+    string? doctorId = ViewBag.DoctorId;
+    string? date = ViewBag.Date;
+    string minDate = ViewBag.MinDate;
+    string maxDate = ViewBag.MaxDate;
+}
+
+<div class="panel form-panel">
+
+    @* Steps 1-4: each choice reloads the page to fill the next step *@
+    <form method="get" asp-action="TakeSerial" class="row g-3">
+        <div class="col-md-6 col-lg-3">
+            <label class="form-label">1. Department</label>
+            <select class="form-select" name="departmentId" onchange="this.form.submit()">
+                <option value="">Select department</option>
+                @foreach (Department d in departments)
+                {
+                    if (d.Id == departmentId)
+                    {
+                        <option value="@d.Id" selected>@d.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <label class="form-label">2. Doctor</label>
+            <select class="form-select" name="doctorId" onchange="this.form.submit()">
+                <option value="">Select doctor</option>
+                @foreach (User d in doctors)
+                {
+                    if (d.Id == doctorId)
+                    {
+                        <option value="@d.Id" selected>@d.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@d.Id">@d.Name</option>
+                    }
+                }
+            </select>
+        </div>
+
+        @if (selectedDoctor != null)
+        {
+            <!-- 3. calendar: only today up to 7 days ahead can be picked -->
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label" for="date">3. Date</label>
+                <input class="form-control" type="date" id="date" name="date"
+                       value="@date" min="@minDate" max="@maxDate" onchange="this.form.submit()" />
+            </div>
+
+            <!-- 4. chamber on that date (only if the doctor sits more than once that day, e.g. morning and evening) -->
+            @if (dayChambers.Count > 1)
+            {
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-label">4. Chamber</label>
+                    <select class="form-select" name="chamberId" onchange="this.form.submit()">
+                        @foreach (Chamber c in dayChambers)
+                        {
+                            if (chamber != null && c.Id == chamber.Id)
+                            {
+                                <option value="@c.Id" selected>@c.Title()</option>
+                            }
+                            else
+                            {
+                                <option value="@c.Id">@c.Title()</option>
+                            }
+                        }
+                    </select>
+                </div>
+            }
+        }
+    </form>
+
+    @if (selectedDoctor != null)
+    {
+        <!-- the chosen doctor and where / when he sits -->
+        <div class="doctor-row mt-4 mb-0">
+            @if (selectedDoctor.PhotoUrl != "")
+            {
+                <img class="avatar avatar-photo" src="@selectedDoctor.PhotoUrl" alt="@selectedDoctor.Name" />
+            }
+            else
+            {
+                <div class="avatar">@selectedDoctor.FirstLetter()</div>
+            }
+            <div>
+                <b>@selectedDoctor.Name</b>
+                <small>@selectedDoctor.Degree · Fee @Clock.Taka(selectedDoctor.Fee)</small>
+            </div>
+        </div>
+
+        <div class="chamber-list mt-3">
+            @foreach (Chamber c in Db.ChambersOf(selectedDoctor.Id!))
+            {
+                <div>
+                    <b>@(c.Room == "" ? "Chamber" : c.Room)</b>
+                    <small>@c.DaysText() · @c.TimeText()</small>
+                </div>
+            }
+        </div>
+
+        if (date == null)
+        {
+            <p class="muted mt-3">Pick a date on the calendar (today up to 7 days ahead).</p>
+        }
+        else if (dayChambers.Count == 0)
+        {
+            <p class="text-danger mt-3">@selectedDoctor.Name has no chamber on @Clock.LongDate(date). Please pick another day.</p>
+        }
+    }
+
+    @* Steps 5-6: pick a slot and write the problem *@
+    @if (selectedDoctor != null && date != null && chamber != null)
+    {
+        <hr class="my-4" />
+        <p class="mb-3"><b>@Clock.LongDate(date)</b> · @HospitalInfo.Name · @chamber.Title()</p>
+
+        <form method="post" asp-action="TakeSerial">
+            <input type="hidden" name="departmentId" value="@departmentId" />
+            <input type="hidden" name="doctorId" value="@doctorId" />
+            <input type="hidden" name="date" value="@date" />
+            <input type="hidden" name="chamberId" value="@chamber.Id" />
+
+            <label class="form-label">5. Free time slots (@QueueService.SlotMinutes min each)</label>
+            @if (freeSlots.Count == 0)
+            {
+                <p class="muted">No free slots left on this day. Please pick another date.</p>
+            }
+            else
+            {
+                <div class="slot-grid">
+                    @foreach (string t in freeSlots)
+                    {
+                        string id = "slot-" + t.Replace(":", "");
+                        <input type="radio" class="btn-check" name="slot" id="@id" value="@t" required />
+                        <label class="slot" for="@id">@Clock.AmPm(t)</label>
+                    }
+                </div>
+
+                <label class="form-label mt-4" for="problem">6. What problem are you having?</label>
+                <textarea class="form-control" id="problem" name="problem" rows="3" maxlength="300" required
+                          placeholder="e.g. Chest pain for 2 days"></textarea>
+
+                <button class="btn btn-teal mt-4" type="submit">Confirm serial</button>
+            }
+        </form>
+    }
+</div>

@@ -1,0 +1,39 @@
+@model List<Serial>
+@inject Db Db
+@{
+    ViewData["Title"] = "Collections";
+    User doctor = ViewBag.Doctor;
+    ViewData["Subtitle"] = "Money received today for " + doctor.Name;
+    int total = ViewBag.Total;
+}
+
+<div class="stats-grid">
+    <div class="stat-card"><span>Total today</span><strong>@Clock.Taka(total)</strong><small>@Clock.LongDate(Clock.Today())</small></div>
+    <div class="stat-card"><span>Payments</span><strong>@Model.Count</strong><small>Patients paid</small></div>
+</div>
+
+<div class="panel">
+    <table class="table align-middle">
+        <thead><tr><th>Serial</th><th>Patient</th><th>Chamber</th><th>Status</th><th class="text-end">Amount</th></tr></thead>
+        <tbody>
+            @foreach (Serial s in Model)
+            {
+                Chamber? c = Db.GetChamber(s.ChamberId);
+                <tr>
+                    <td>#@s.SerialNo</td>
+                    <td>@Db.UserName(s.PatientId)</td>
+                    <td>@(c != null ? c.Title() : "—")</td>
+                    <td><span class="@s.CssClass()">@s.Label()</span></td>
+                    <td class="text-end">@Clock.Taka(s.Fee)</td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="5" class="muted text-center py-4">No money received yet today.</td></tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr><th colspan="4">Total</th><th class="text-end">@Clock.Taka(total)</th></tr>
+        </tfoot>
+    </table>
+</div>

@@ -1,0 +1,179 @@
+@model List<QueueRow>
+@{
+    ViewData["Title"] = "Serial Queue";
+    User doctor = ViewBag.Doctor;
+    Chamber? chamber = ViewBag.Chamber;
+    ViewData["Subtitle"] = doctor.Name + (chamber == null ? "" : " · " + chamber.Title());
+
+    // numbers for the boxes
+    int waiting = Model.Count(r => r.Serial.Status == SerialStatus.Waiting || r.Serial.Status == SerialStatus.Present);
+    int done = Model.Count(r => r.Serial.Status == SerialStatus.Done);
+    int absent = Model.Count(r => r.Serial.Status == SerialStatus.Absent);
+    int money = Model.Sum(r => r.Serial.Fee ?? 0);
+
+    // the patient in the room now, or the first one who is present and ready
+    QueueRow? inRoom = Model.FirstOrDefault(r => r.Serial.Status == SerialStatus.InRoom);
+    QueueRow? ready = Model.FirstOrDefault(r => r.Serial.Status == SerialStatus.Present);
+
+    string? chamberId = chamber?.Id;
+    string day = ViewBag.Date;
+}
+
+<!-- reload every 20 seconds so new bookings show up -->
+<div data-auto-refresh="20"></div>
+
+<div class="d-flex justify-content-end mb-2">
+    <a class="btn btn-teal" asp-action="AddSerial" asp-route-date="@day">+ Add serial</a>
+</div>
+
+<partial name="_ChamberPicker" />
+
+@if (chamber == null)
+{
+    <div class="panel muted">The doctor has no chamber on this day.</div>
+    <partial name="_UpcomingDays" />
+    return;
+}
+
+<div class="stats-grid">
+    <div class="stat-card"><span>Waiting</span><strong>@waiting</strong><small>In the queue</small></div>
+    <div class="stat-card"><span>Completed</span><strong>@done</strong><small>of @Model.Count serials</small></div>
+    <div class="stat-card"><span>Absent</span><strong>@absent</strong><small>Removed after 2 calls</small></div>
+    <div class="stat-card"><span>Collected</span><strong>@Clock.Taka(money)</strong><small>This chamber today</small></div>
+</div>
+
+<!-- consultation timer -->
+@if (inRoom != null)
+{
+    <div class="panel timer-panel">
+        <partial name="_LiveTimer" model="inRoom" />
+        <form method="post" asp-action="StopTimer" class="mt-3">
+            <input type="hidden" name="serialId" value="@inRoom.Serial.Id" />
+            <input type="hidden" name="chamberId" value="@chamberId" />
+                                    <input type="hidden" name="date" value="@day" />
+            <button class="btn btn-danger btn-lg w-100" type="submit">Patient came out — stop timer</button>
+        </form>
+    </div>
+}
+else if (ready != null)
+{
+    <div class="panel timer-panel">
+        <div class="timer-box">
+            <div>
+                <small>Present and ready</small>
+                <b>Serial #@ready.Serial.SerialNo · @ready.PatientName</b>
+                <small class="muted">@ready.Serial.Problem</small>
+            </div>
+            <div class="timer">00:00</div>
+        </div>
+        <form method="post" asp-action="StartTimer" class="mt-3">
+            <input type="hidden" name="serialId" value="@ready.Serial.Id" />
+            <input type="hidden" name="chamberId" value="@chamberId" />
+                                    <input type="hidden" name="date" value="@day" />
+            <button class="btn btn-teal btn-lg w-100" type="submit">Patient went in — start timer</button>
+        </form>
+    </div>
+}
+else if (waiting > 0)
+{
+    <div class="alert alert-info">Call the next patient and mark <b>Present</b> to start the consultation timer.</div>
+}
+
+<!-- queue table -->
+<div class="panel">
+    <div class="panel-heading">
+        <h2>Live serial queue</h2>
+        <small class="muted">Absent once → moves to the end · absent twice → removed (can still be marked present)</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Serial</th><th>Patient</th><th>Booked</th><th>Estimated</th><th>Status</th>
+                    <th>Call</th><th>Fee received (৳)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (QueueRow row in Model)
+                {
+                    Serial s = row.Serial;
+                    bool canPresent = s.Status == SerialStatus.Waiting || s.Status == SerialStatus.Absent;
+                    bool canAbsent = s.Status == SerialStatus.Waiting || s.Status == SerialStatus.Present;
+
+                    <tr class="@(s.Status == SerialStatus.InRoom ? "row-active" : "")">
+                        <td><b>#@s.SerialNo.ToString("00")</b></td>
+                        <td>
+                            @row.PatientName
+                            <small class="d-block muted">ID @row.PatientLoginId · @row.PatientPhone</small>
+                        </td>
+                        <td>@Clock.AmPm(s.SlotTime)</td>
+                        <td>
+                            @(row.Estimated == null ? "—" : Clock.AmPm(row.Estimated.Value))
+                            @if (row.DelayMinutes > 0)
+                            {
+                                <small class="d-block text-danger">+@row.DelayMinutes min</small>
+                            }
+                        </td>
+                        <td>
+                            <span class="@s.CssClass()">@s.Label()</span>
+                            @if (s.AbsentCount > 0 && s.Status != SerialStatus.Absent)
+                            {
+                                <small class="d-block muted">absent once</small>
+                            }
+                        </td>
+                        <td class="text-nowrap">
+                            @if (canPresent)
+                            {
+                                <form method="post" asp-action="Present" class="d-inline">
+                                    <input type="hidden" name="serialId" value="@s.Id" />
+                                    <input type="hidden" name="chamberId" value="@chamberId" />
+                                    <input type="hidden" name="date" value="@day" />
+                                    <button class="btn btn-sm btn-teal" type="submit">Present</button>
+                                </form>
+                            }
+                            @if (s.Status == SerialStatus.Done)
+                            {
+                                if (row.HasPrescription)
+                                {
+                                    <a class="btn btn-sm btn-teal" asp-action="PrintPrescription" asp-route-serialId="@s.Id">Print Rx</a>
+                                }
+                                else
+                                {
+                                    <small class="muted">Waiting for doctor's Rx</small>
+                                }
+                            }
+                            @if (canAbsent)
+                            {
+                                <form method="post" asp-action="Absent" class="d-inline">
+                                    <input type="hidden" name="serialId" value="@s.Id" />
+                                    <input type="hidden" name="chamberId" value="@chamberId" />
+                                    <input type="hidden" name="date" value="@day" />
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Absent</button>
+                                </form>
+                            }
+                        </td>
+                        <td>
+                            @if (s.Status != SerialStatus.Absent)
+                            {
+                                <form method="post" asp-action="SaveFee" class="fee-form">
+                                    <input type="hidden" name="serialId" value="@s.Id" />
+                                    <input type="hidden" name="chamberId" value="@chamberId" />
+                                    <input type="hidden" name="date" value="@day" />
+                                    <input class="form-control form-control-sm" type="number" name="amount" min="0" step="1"
+                                           value="@s.Fee" placeholder="@doctor.Fee" />
+                                    <button class="btn btn-sm btn-outline-teal" type="submit">Save</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="7" class="muted text-center py-4">No serials booked yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<partial name="_UpcomingDays" />

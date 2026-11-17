@@ -1,0 +1,13 @@
+@model int
+@* CareNexus logo (a cross with dots). Model = size in px. Colours come from healthcare.css *@
+<svg class="logo-mark" viewBox="0 0 100 100" width="@Model" height="@Model" aria-hidden="true">
+    <g class="cross" stroke-width="17" stroke-linecap="round">
+        <line x1="50" y1="15" x2="50" y2="85"></line>
+        <line x1="15" y1="50" x2="85" y2="50"></line>
+    </g>
+    <circle class="node" cx="50" cy="50" r="11"></circle>
+    <circle class="node" cx="50" cy="15" r="6"></circle>
+    <circle class="node" cx="85" cy="50" r="6"></circle>
+    <circle class="node" cx="50" cy="85" r="6"></circle>
+    <circle class="node" cx="15" cy="50" r="6"></circle>
+</svg>

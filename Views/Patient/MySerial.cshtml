@@ -1,0 +1,88 @@
+@model Serial?
+@{
+    ViewData["Title"] = "My Serial";
+    ViewData["Subtitle"] = "Live status — this page refreshes every 20 seconds";
+}
+
+@if (Model == null)
+{
+    <div class="panel serial-panel">
+        <h2>No upcoming serial</h2>
+        <p class="muted">Book a serial to see your live queue time here.</p>
+        <a class="btn btn-teal" asp-action="TakeSerial">Take a serial</a>
+    </div>
+    return;
+}
+
+@{
+    Serial s = Model;
+    QueueRow? row = ViewBag.MyRow;
+    int? nowServing = ViewBag.NowServing;
+    User? doctor = ViewBag.Doctor;
+    Chamber? chamber = ViewBag.Chamber;
+    List<Serial> upcoming = ViewBag.Upcoming;
+
+    // "arrive by" = 15 minutes before the estimated time
+    string estimateText = "—";
+    string arriveByText = "—";
+    string delayText = "";
+    if (row != null && row.Estimated != null)
+    {
+        estimateText = Clock.AmPm(row.Estimated.Value);
+        arriveByText = Clock.AmPm(row.Estimated.Value.AddMinutes(-15));
+
+        if (row.DelayMinutes > 0) delayText = row.DelayMinutes + " min later than booked";
+        else delayText = "On time";
+    }
+}
+
+<!-- reload this page every 20 seconds -->
+<div data-auto-refresh="20"></div>
+
+<div class="content-grid">
+    <div class="panel serial-panel">
+        <span class="@s.CssClass()">@s.Label()</span>
+        <h2 class="mt-3">@(s.Date == Clock.Today() ? "Today's appointment" : Clock.LongDate(s.Date))</h2>
+        <div class="serial-number">#@s.SerialNo.ToString("00")</div>
+        <h3>@doctor?.Name</h3>
+        <p class="muted">@HospitalInfo.Name · @chamber?.Room</p>
+
+        <div class="estimate-box">
+            <small>Please arrive by</small>
+            <strong>@arriveByText</strong>
+            <span class="muted">Estimated time to go in: @estimateText · @delayText</span>
+        </div>
+
+        <div class="detail-grid mt-4">
+            <div><small>Booked slot</small><b>@Clock.AmPm(s.SlotTime)</b></div>
+            <div><small>Now in room</small><b>@(nowServing == null ? "—" : "#" + nowServing)</b></div>
+            <div><small>People ahead</small><b>@(row == null || row.Estimated == null ? "—" : row.PeopleAhead.ToString())</b></div>
+        </div>
+
+        <p class="muted small mt-4 mb-0">
+            Times start from fixed @QueueService.SlotMinutes-minute slots and move with the real consultation timer.
+        </p>
+
+        @if (s.Status == SerialStatus.Waiting)
+        {
+            <form method="post" asp-action="Cancel" class="mt-3" onsubmit="return confirm('Cancel this serial?');">
+                <input type="hidden" name="id" value="@s.Id" />
+                <button class="btn btn-sm btn-outline-danger" type="submit">Cancel serial</button>
+            </form>
+        }
+    </div>
+
+    <div class="panel">
+        <h2>Your upcoming serials</h2>
+        @foreach (Serial u in upcoming)
+        {
+            <a class="list-row text-decoration-none text-reset @(u.Id == s.Id ? "fw-bold" : "")" asp-action="MySerial" asp-route-id="@u.Id">
+                <span>
+                    <b>Serial #@u.SerialNo</b>
+                    <small>@Clock.NiceDate(u.Date) · @Clock.AmPm(u.SlotTime)</small>
+                </span>
+                <span class="@u.CssClass()">@u.Label()</span>
+            </a>
+        }
+    </div>
+</div>

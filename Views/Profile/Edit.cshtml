@@ -1,0 +1,97 @@
+@model User
+@{
+    ViewData["Title"] = "Edit Profile";
+    ViewData["Subtitle"] = "Change your details";
+    string[] genders = { "Male", "Female", "Other" };
+    string[] bloodGroups = { "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" };
+}
+
+<div class="panel form-panel">
+    <form method="post" asp-action="Edit" class="row g-3" enctype="multipart/form-data">
+
+        <!-- profile photo -->
+        <div class="col-12">
+            <label class="form-label">Profile photo</label>
+            <div class="photo-row">
+                @if (Model.PhotoUrl != "")
+                {
+                    <img class="avatar avatar-xl avatar-photo" src="@Model.PhotoUrl" alt="@Model.Name" />
+                }
+                else
+                {
+                    <span class="avatar avatar-xl">@Model.FirstLetter()</span>
+                }
+                <div>
+                    <input class="form-control photo-input" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" />
+                    <small class="muted">JPG, PNG or WEBP, up to 2 MB</small>
+                    @if (Model.PhotoUrl != "")
+                    {
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="removePhoto" id="removePhoto" value="true" />
+                            <label class="form-check-label" for="removePhoto">Remove current photo</label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label" for="name">Full name</label>
+            <input class="form-control" id="name" name="name" value="@Model.Name" required />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="phone">Phone</label>
+            <input class="form-control" id="phone" name="phone" value="@Model.Phone" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="age">Age</label>
+            <input class="form-control" id="age" name="age" type="number" min="0" max="120" value="@Model.Age" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="gender">Gender</label>
+            <select class="form-select" id="gender" name="gender">
+                <option value="">—</option>
+                @foreach (string g in genders)
+                {
+                    if (g == Model.Gender)
+                    {
+                        <option value="@g" selected>@g</option>
+                    }
+                    else
+                    {
+                        <option value="@g">@g</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="bloodGroup">Blood group</label>
+            <select class="form-select" id="bloodGroup" name="bloodGroup">
+                <option value="">—</option>
+                @foreach (string b in bloodGroups)
+                {
+                    if (b == Model.BloodGroup)
+                    {
+                        <option value="@b" selected>@b</option>
+                    }
+                    else
+                    {
+                        <option value="@b">@b</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="city">City</label>
+            <input class="form-control" id="city" name="city" value="@Model.City" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="address">Address</label>
+            <input class="form-control" id="address" name="address" value="@Model.Address" />
+        </div>
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-teal" type="submit">Save</button>
+            <a class="btn btn-outline-teal" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</div>

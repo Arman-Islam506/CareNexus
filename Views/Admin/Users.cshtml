@@ -1,0 +1,62 @@
+@model List<User>
+@inject Db Db
+@{
+    ViewData["Title"] = "Users";
+    ViewData["Subtitle"] = "All accounts";
+    string? selected = ViewBag.Role;
+    string[] roles = { Roles.Patient, Roles.Doctor, Roles.Assistant, Roles.Admin };
+}
+
+<div class="toolbar">
+    <a class="btn btn-sm @(string.IsNullOrEmpty(selected) ? "btn-teal" : "btn-outline-teal")" asp-action="Users">All</a>
+    @foreach (string r in roles)
+    {
+        <a class="btn btn-sm @(selected == r ? "btn-teal" : "btn-outline-teal")" asp-action="Users" asp-route-role="@r">@r</a>
+    }
+    <a class="btn btn-sm btn-teal ms-auto" asp-action="AddUser">+ Add doctor / assistant</a>
+</div>
+
+<div class="panel">
+    <table class="table align-middle">
+        <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Phone</th><th>Email</th><th>Details</th><th></th></tr></thead>
+        <tbody>
+            @foreach (User u in Model)
+            {
+                <tr>
+                    <td><b>@u.LoginId</b></td>
+                    <td>@u.Name</td>
+                    <td><span class="status">@u.Role</span></td>
+                    <td>@(u.Phone == "" ? "—" : u.Phone)</td>
+                    <td>@u.Email</td>
+                    <td>
+                        @if (u.Role == Roles.Doctor)
+                        {
+                            <span>@Db.DepartmentName(u.DepartmentId) · @Clock.Taka(u.Fee)</span>
+                        }
+                        else if (u.Role == Roles.Assistant)
+                        {
+                            <span>Works for @Db.UserName(u.DoctorId)</span>
+                        }
+                        else
+                        {
+                            <span class="muted">—</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        @if (u.Role != Roles.Admin)
+                        {
+                            <form method="post" asp-action="DeleteUser" onsubmit="return confirm('Delete this user?');">
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="7" class="muted text-center py-4">No users.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

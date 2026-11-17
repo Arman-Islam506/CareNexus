@@ -1,0 +1,74 @@
+@{
+    string role = User.FindFirstValue(ClaimTypes.Role) ?? "";
+
+    // which page is open now (to highlight it in the menu)
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    // returns "active" for the open page, so the link gets the teal colour
+    string Active(string controller, string action)
+    {
+        if (controller == currentController && action == currentAction) return "active";
+        return "";
+    }
+}
+
+<aside class="sidebar">
+    <a class="brand" asp-controller="Home" asp-action="Index">
+        <partial name="_LogoMark" model="34" />
+        <span>Care<span class="brand-accent">Nexus</span></span>
+    </a>
+
+    <div class="muted small mb-2">@HospitalInfo.Name</div>
+
+    @if (role != "")
+    {
+        <div class="sidebar-label">@role.ToUpper() PORTAL</div>
+    }
+
+    <!-- each role sees its own menu -->
+    <nav class="side-nav">
+        @if (role == Roles.Patient)
+        {
+            <a class="side-link @Active("Patient", "Index")" asp-controller="Patient" asp-action="Index">Dashboard</a>
+            <a class="side-link @Active("Patient", "Doctors")" asp-controller="Patient" asp-action="Doctors">Doctors</a>
+            <a class="side-link @Active("Patient", "TakeSerial")" asp-controller="Patient" asp-action="TakeSerial">Take Serial</a>
+            <a class="side-link @Active("Patient", "MySerial")" asp-controller="Patient" asp-action="MySerial">My Serial</a>
+            <a class="side-link @Active("Patient", "Prescriptions")" asp-controller="Patient" asp-action="Prescriptions">Prescriptions</a>
+            <a class="side-link @Active("Patient", "ReportChecker")" asp-controller="Patient" asp-action="ReportChecker">Report Checker</a>
+        }
+        else if (role == Roles.Doctor)
+        {
+            <a class="side-link @Active("Doctor", "Index")" asp-controller="Doctor" asp-action="Index">Today's Patients</a>
+            <a class="side-link @Active("Doctor", "PatientHistory")" asp-controller="Doctor" asp-action="PatientHistory">Patient History</a>
+            <a class="side-link @Active("Doctor", "Schedule")" asp-controller="Doctor" asp-action="Schedule">Chamber Schedule</a>
+        }
+        else if (role == Roles.Assistant)
+        {
+            <a class="side-link @Active("Assistant", "Index")" asp-controller="Assistant" asp-action="Index">Serial Queue</a>
+            <a class="side-link @Active("Assistant", "AddSerial")" asp-controller="Assistant" asp-action="AddSerial">Add Serial</a>
+            <a class="side-link @Active("Assistant", "Collections")" asp-controller="Assistant" asp-action="Collections">Collections</a>
+        }
+        else if (role == Roles.Admin)
+        {
+            <a class="side-link @Active("Admin", "Index")" asp-controller="Admin" asp-action="Index">Dashboard</a>
+            <a class="side-link @Active("Admin", "Users")" asp-controller="Admin" asp-action="Users">Users</a>
+            <a class="side-link @Active("Admin", "Departments")" asp-controller="Admin" asp-action="Departments">Departments</a>
+            <a class="side-link @Active("Admin", "Schedules")" asp-controller="Admin" asp-action="Schedules">Schedules</a>
+        }
+
+        @if (role != "")
+        {
+            <a class="side-link @Active("Profile", "Index")" asp-controller="Profile" asp-action="Index">My Profile</a>
+        }
+    </nav>
+
+    <div class="sidebar-tagline">Smart Healthcare Management Platform with AI-Based Medical Report Analysis</div>
+
+    @if (role != "")
+    {
+        <form class="logout" method="post" asp-controller="Account" asp-action="Logout">
+            <button type="submit" class="side-link w-100 text-start border-0 bg-transparent">Log out</button>
+        </form>
+    }
+</aside>

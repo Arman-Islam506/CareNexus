@@ -1,0 +1,25 @@
+@* List of days that already have serials booked (today and later).
+   Click one to open that day's queue. Uses ViewBag.Upcoming. *@
+@{
+    List<Option> upcoming = ViewBag.Upcoming;
+}
+
+<div class="panel">
+    <h2>Booked serials — all upcoming days</h2>
+    @if (upcoming.Count == 0)
+    {
+        <p class="muted mb-0">No serials booked yet for today or later.</p>
+    }
+    else
+    {
+        foreach (Option o in upcoming)
+        {
+            string[] parts = o.Value.Split('|');   // "<chamberId>|<date>"
+            <a class="list-row text-decoration-none text-reset" asp-action="Index"
+               asp-route-chamberId="@parts[0]" asp-route-date="@parts[1]">
+                <span><b>@o.Text</b></span>
+                <span class="muted">Open →</span>
+            </a>
+        }
+    }
+</div>

@@ -1,0 +1,13 @@
+@model Prescription
+@{
+    ViewData["Title"] = "Print Prescription";
+    Serial serial = ViewBag.Serial;
+    ViewData["Subtitle"] = "Serial #" + serial.SerialNo + " · " + Clock.LongDate(serial.Date);
+}
+
+<div class="toolbar no-print">
+    <a class="btn btn-outline-teal" asp-action="Index" asp-route-date="@serial.Date" asp-route-chamberId="@serial.ChamberId">← Back to queue</a>
+    <button class="btn btn-teal" type="button" onclick="window.print()">Print</button>
+</div>
+
+<partial name="_PrescriptionPaper" model="Model" />

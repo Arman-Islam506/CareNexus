@@ -1,0 +1,64 @@
+@model Prescription
+@{
+    ViewData["Title"] = "Prescription";
+    ViewData["Subtitle"] = "Write a prescription — the patient sees it right after saving";
+
+    Serial s = ViewBag.Serial;
+    User? p = ViewBag.Patient;
+}
+
+<div class="content-grid">
+    <!-- left: the prescription form (notepad) -->
+    <form class="panel" method="post" asp-action="Prescription">
+        <input type="hidden" name="serialId" value="@s.Id" />
+
+        <label class="form-label" for="diagnosis">Diagnosis</label>
+        <input class="form-control" id="diagnosis" name="diagnosis" value="@Model.Diagnosis" placeholder="e.g. Viral fever" required />
+
+        <label class="form-label mt-3" for="medicines">Medicines (one per line)</label>
+        <textarea class="form-control notepad" id="medicines" name="medicines" rows="7" required
+                  placeholder="Tab. Napa 500 mg — 1+1+1, after meal, 5 days">@Model.Medicines</textarea>
+
+        <label class="form-label mt-3" for="advice">Advice</label>
+        <textarea class="form-control" id="advice" name="advice" rows="3" placeholder="Rest, drink water, tests to do ...">@Model.Advice</textarea>
+
+        <label class="form-label mt-3" for="followUp">Follow-up</label>
+        <input class="form-control" id="followUp" name="followUp" value="@Model.FollowUp" placeholder="e.g. After 7 days with reports" />
+
+        <div class="d-flex gap-2 mt-4">
+            <button class="btn btn-teal" type="submit">Save prescription</button>
+            <a class="btn btn-outline-teal" asp-action="Index" asp-route-chamberId="@s.ChamberId" asp-route-date="@s.Date">Cancel</a>
+        </div>
+    </form>
+
+    <!-- right: patient info -->
+    <div class="panel">
+        <h2>Patient</h2>
+        <div class="profile-row">
+            @if (p != null && p.PhotoUrl != "")
+            {
+                <img class="avatar avatar-lg avatar-photo" src="@p.PhotoUrl" alt="@p.Name" />
+            }
+            else
+            {
+                <span class="avatar avatar-lg">@(p != null ? p.FirstLetter() : "?")</span>
+            }
+            <div>
+                <h3>@(p?.Name ?? "Unknown")</h3>
+                <span class="muted">ID @p?.LoginId · Serial #@s.SerialNo · @Clock.NiceDate(s.Date)</span>
+            </div>
+        </div>
+        <div class="detail-grid">
+            <div><small>Age</small><b>@(p?.Age?.ToString() ?? "—")</b></div>
+            <div><small>Gender</small><b>@(string.IsNullOrEmpty(p?.Gender) ? "—" : p.Gender)</b></div>
+            <div><small>Blood group</small><b>@(string.IsNullOrEmpty(p?.BloodGroup) ? "—" : p.BloodGroup)</b></div>
+        </div>
+        <hr />
+        <p><small class="muted d-block">Problem</small>@s.Problem</p>
+        <p class="mb-0"><small class="muted d-block">Previous visits with you</small>@ViewBag.PreviousVisits</p>
+        @if (p != null)
+        {
+            <a class="btn btn-sm btn-outline-teal mt-3" asp-action="PatientHistory" asp-route-search="@p.LoginId">See history</a>
+        }
+    </div>
+</div>

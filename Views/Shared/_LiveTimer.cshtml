@@ -1,0 +1,14 @@
+@model QueueRow
+@* The running consultation timer. site.js counts the mm:ss every second. *@
+@{
+    long startMs = Clock.ToUnixMs(Clock.ParseDateTime(Model.Serial.StartedAt!));
+}
+
+<div class="timer-box">
+    <div>
+        <small>In the room now</small>
+        <b>Serial #@Model.Serial.SerialNo · @Model.PatientName</b>
+        <small class="muted">@Model.Serial.Problem</small>
+    </div>
+    <div class="timer js-timer" data-start="@startMs" data-limit="@QueueService.SlotMinutes">00:00</div>
+</div>

@@ -1,0 +1,23 @@
+@model List<Chamber>
+@{
+    ViewData["Title"] = "Chamber Schedule";
+    ViewData["Subtitle"] = "When you sit at " + HospitalInfo.Name + " — serial dates follow this schedule";
+}
+
+@if (Model.Count == 0)
+{
+    <div class="panel muted">No chambers yet. The admin adds them in Schedules.</div>
+}
+
+<div class="doctor-grid">
+    @foreach (Chamber c in Model)
+    {
+        <div class="panel">
+            <h2>@(c.Room == "" ? "Chamber" : c.Room)</h2>
+            <div class="list-row"><span><small>Hospital</small><b>@HospitalInfo.Name</b></span></div>
+            <div class="list-row"><span><small>Days</small><b>@c.DaysText()</b></span></div>
+            <div class="list-row"><span><small>Time</small><b>@c.TimeText()</b></span></div>
+            <div class="list-row"><span><small>Serials per session</small><b>@c.SlotCount() (@QueueService.SlotMinutes min each)</b></span></div>
+        </div>
+    }
+</div>

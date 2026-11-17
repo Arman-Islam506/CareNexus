@@ -1,0 +1,55 @@
+@model Prescription
+@inject Db Db
+@* The printable prescription "paper". Used by the patient's and the assistant's print pages. *@
+@{
+    User? doctor = Db.GetUser(Model.DoctorId);
+    User? patient = Db.GetUser(Model.PatientId);
+    Serial? serial = Db.GetSerial(Model.SerialId);
+    Chamber? chamber = serial != null ? Db.GetChamber(serial.ChamberId) : null;
+}
+
+<div class="rx-paper">
+    <header class="rx-head">
+        <div>
+            <h2>@(doctor?.Name ?? "Doctor")</h2>
+            <div>@doctor?.Degree</div>
+            <div class="muted">@Db.DepartmentName(doctor?.DepartmentId)</div>
+        </div>
+        <div class="text-end">
+            <b>@HospitalInfo.Name</b>
+            <div class="muted">@HospitalInfo.Address</div>
+            <div class="muted">@chamber?.Room</div>
+            <div class="muted">@Clock.LongDateTime(Model.CreatedAt)</div>
+        </div>
+    </header>
+
+    <div class="rx-patient">
+        <span><small>Patient</small><b>@(patient?.Name ?? "—")</b></span>
+        <span><small>Age</small><b>@(patient?.Age?.ToString() ?? "—")</b></span>
+        <span><small>Gender</small><b>@(string.IsNullOrEmpty(patient?.Gender) ? "—" : patient.Gender)</b></span>
+    </div>
+
+    <p><small class="muted">Diagnosis:</small> <b>@Model.Diagnosis</b></p>
+
+    <div class="rx-symbol">℞</div>
+    <ol class="rx-medicines">
+        @foreach (string line in Model.Medicines.Split('\n'))
+        {
+            if (line.Trim() != "")
+            {
+                <li>@line.Trim()</li>
+            }
+        }
+    </ol>
+
+    @if (Model.Advice != "")
+    {
+        <h6>Advice</h6>
+        <p class="rx-pre">@Model.Advice</p>
+    }
+    @if (Model.FollowUp != "")
+    {
+        <h6>Follow-up</h6>
+        <p>@Model.FollowUp</p>
+    }
+</div>

@@ -1,0 +1,36 @@
+@* Pick a day and a chamber for the queue page (doctor and assistant).
+   Uses ViewBag.Date, ViewBag.Chambers and ViewBag.Chamber from the controller. *@
+@{
+    string day = ViewBag.Date;
+    List<Chamber> chambers = ViewBag.Chambers;
+    Chamber? current = ViewBag.Chamber;
+}
+
+<form class="toolbar" method="get" asp-action="Index">
+    <label class="form-label mb-0" for="date">Day</label>
+    <input class="form-control filter" type="date" id="date" name="date" value="@day" onchange="this.form.submit()" />
+
+    @if (chambers.Count > 0)
+    {
+        <label class="form-label mb-0">Chamber</label>
+        <select class="form-select filter" name="chamberId" onchange="this.form.submit()">
+            @foreach (Chamber c in chambers)
+            {
+                if (current != null && c.Id == current.Id)
+                {
+                    <option value="@c.Id" selected>@c.Title()</option>
+                }
+                else
+                {
+                    <option value="@c.Id">@c.Title()</option>
+                }
+            }
+        </select>
+    }
+
+    @if (day != Clock.Today())
+    {
+        <a class="btn btn-sm btn-outline-teal" asp-action="Index">Back to today</a>
+    }
+    <span class="muted">@Clock.LongDate(day)</span>
+</form>

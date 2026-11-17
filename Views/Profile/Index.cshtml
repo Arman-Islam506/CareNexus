@@ -1,0 +1,50 @@
+@model User
+@inject Db Db
+@{
+    ViewData["Title"] = "My Profile";
+    ViewData["Subtitle"] = "Your account details";
+}
+
+<div class="panel">
+    <div class="panel-heading">
+        <h2>Profile</h2>
+        <a class="btn btn-sm btn-teal" asp-action="Edit">Edit profile</a>
+    </div>
+
+    <div class="profile-row">
+        @if (Model.PhotoUrl != "")
+            {
+                <img class="avatar avatar-lg avatar-photo" src="@Model.PhotoUrl" alt="@Model.Name" />
+            }
+            else
+            {
+                <span class="avatar avatar-lg">@Model.FirstLetter()</span>
+            }
+        <div>
+            <h3>@Model.Name</h3>
+            <span class="muted">@Model.Role · ID @Model.LoginId</span>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <div><small>Email</small><b>@Model.Email</b></div>
+        <div><small>Phone</small><b>@(Model.Phone == "" ? "—" : Model.Phone)</b></div>
+        <div><small>Age</small><b>@(Model.Age == null ? "—" : Model.Age.ToString())</b></div>
+        <div><small>Gender</small><b>@(Model.Gender == "" ? "—" : Model.Gender)</b></div>
+        <div><small>Blood group</small><b>@(Model.BloodGroup == "" ? "—" : Model.BloodGroup)</b></div>
+        <div><small>City</small><b>@(Model.City == "" ? "—" : Model.City)</b></div>
+        <div><small>Address</small><b>@(Model.Address == "" ? "—" : Model.Address)</b></div>
+
+        @if (Model.Role == Roles.Doctor)
+        {
+            <div><small>Department</small><b>@Db.DepartmentName(Model.DepartmentId)</b></div>
+            <div><small>Degree</small><b>@Model.Degree</b></div>
+            <div><small>Experience</small><b>@Model.ExperienceYears years</b></div>
+            <div><small>Fee</small><b>@Clock.Taka(Model.Fee)</b></div>
+        }
+        @if (Model.Role == Roles.Assistant)
+        {
+            <div><small>Works for</small><b>@Db.UserName(Model.DoctorId)</b></div>
+        }
+    </div>
+</div>

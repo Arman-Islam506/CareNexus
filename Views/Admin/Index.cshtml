@@ -1,0 +1,58 @@
+@model List<Department>
+@inject Db Db
+@inject QueueService Queue
+@using MongoDB.Driver
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Subtitle"] = "Hospital overview";
+
+    string today = Clock.Today();
+    int collectionToday = ViewBag.CollectionToday;
+}
+
+<div class="stats-grid">
+    <div class="stat-card"><span>Patients</span><strong>@ViewBag.Patients</strong><small>Registered</small></div>
+    <div class="stat-card"><span>Doctors</span><strong>@ViewBag.Doctors</strong><small>@Model.Count departments</small></div>
+    <div class="stat-card"><span>Assistants</span><strong>@ViewBag.Assistants</strong><small>Serial controllers</small></div>
+    <div class="stat-card"><span>Serials today</span><strong>@ViewBag.SerialsToday</strong><small>All chambers</small></div>
+    <div class="stat-card"><span>Collection today</span><strong>@Clock.Taka(collectionToday)</strong><small>All doctors</small></div>
+</div>
+
+<div class="panel">
+    <h2>By department</h2>
+    <table class="table align-middle">
+        <thead>
+            <tr><th>Department</th><th>Doctors</th><th>Serials today</th><th>Completed today</th><th>All-time serials</th><th class="text-end">Collection today</th></tr>
+        </thead>
+        <tbody>
+            @foreach (Department d in Model)
+            {
+                // count everything for the doctors of this department
+                List<User> doctors = Db.AllDoctors().Where(u => u.DepartmentId == d.Id).ToList();
+                int serialsToday = 0;
+                int doneToday = 0;
+                long allTime = 0;
+                int money = 0;
+
+                foreach (User doc in doctors)
+                {
+                    string docId = doc.Id!;
+                    List<Serial> todaySerials = Db.Serials.Find(s => s.DoctorId == docId && s.Date == today).ToList();
+                    serialsToday = serialsToday + todaySerials.Count;
+                    doneToday = doneToday + todaySerials.Count(s => s.Status == SerialStatus.Done);
+                    allTime = allTime + Db.Serials.CountDocuments(s => s.DoctorId == docId);
+                    money = money + Queue.CollectionFor(docId, today);
+                }
+
+                <tr>
+                    <td><b>@d.Name</b></td>
+                    <td>@doctors.Count</td>
+                    <td>@serialsToday</td>
+                    <td>@doneToday</td>
+                    <td>@allTime</td>
+                    <td class="text-end">@Clock.Taka(money)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
