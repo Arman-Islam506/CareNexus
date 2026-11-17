@@ -49,7 +49,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
         options.Cookie.Name = "CareNexus.Auth";
         options.Cookie.HttpOnly = true;                     // JavaScript can't read the cookie
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // only sent over https
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // https when available (free host may be http only)
         options.Cookie.SameSite = SameSiteMode.Lax;
     });
 builder.Services.AddAuthorization();
@@ -104,7 +104,7 @@ app.Use(async (context, next) =>
     }
 });
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();      // serves files added while the app runs (uploaded photos)
 app.UseRouting();
 app.UseAuthentication();   // who are you? (reads the login cookie)

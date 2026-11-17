@@ -14,12 +14,14 @@
 }
 
 <aside class="sidebar">
-    <a class="brand" asp-controller="Home" asp-action="Index">
-        <partial name="_LogoMark" model="34" />
-        <span>Care<span class="brand-accent">Nexus</span></span>
-    </a>
-
-    <div class="muted small mb-2">@HospitalInfo.Name</div>
+    <!-- logo + hospital name, with a line under it (same height as the top bar) -->
+    <div class="sidebar-head">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <partial name="_LogoMark" model="34" />
+            <span>Care<span class="brand-accent">Nexus</span></span>
+        </a>
+        <div class="muted small">@HospitalInfo.Name</div>
+    </div>
 
     @if (role != "")
     {
