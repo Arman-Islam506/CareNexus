@@ -104,7 +104,7 @@ app.Use(async (context, next) =>
     }
 });
 
-//app.UseHttpsRedirection();
+// app.UseHttpsRedirection();   // turn back on after HTTPS is enabled on the host
 app.UseStaticFiles();      // serves files added while the app runs (uploaded photos)
 app.UseRouting();
 app.UseAuthentication();   // who are you? (reads the login cookie)

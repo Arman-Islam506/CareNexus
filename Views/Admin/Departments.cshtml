@@ -6,9 +6,23 @@
     ViewData["Subtitle"] = "Hospital departments";
 }
 
+<!-- search box -->
+<form class="toolbar" method="get" asp-action="Departments">
+    <input class="form-control search" name="search" value="@ViewBag.Search" placeholder="Search department name" />
+    <button class="btn btn-teal" type="submit">Search</button>
+    @if (!string.IsNullOrWhiteSpace((string?)ViewBag.Search))
+    {
+        <a class="btn btn-outline-teal" asp-action="Departments">Clear</a>
+    }
+</form>
+
 <div class="content-grid">
     <div class="panel">
         <h2>All departments</h2>
+        @if (Model.Count == 0)
+        {
+            <p class="muted">No department found.</p>
+        }
         <table class="table align-middle">
             <thead><tr><th>Name</th><th>Doctors</th><th></th></tr></thead>
             <tbody>

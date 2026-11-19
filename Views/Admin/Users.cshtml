@@ -8,13 +8,24 @@
 }
 
 <div class="toolbar">
-    <a class="btn btn-sm @(string.IsNullOrEmpty(selected) ? "btn-teal" : "btn-outline-teal")" asp-action="Users">All</a>
+    <a class="btn btn-sm @(string.IsNullOrEmpty(selected) ? "btn-teal" : "btn-outline-teal")" asp-action="Users" asp-route-search="@ViewBag.Search">All</a>
     @foreach (string r in roles)
     {
-        <a class="btn btn-sm @(selected == r ? "btn-teal" : "btn-outline-teal")" asp-action="Users" asp-route-role="@r">@r</a>
+        <a class="btn btn-sm @(selected == r ? "btn-teal" : "btn-outline-teal")" asp-action="Users" asp-route-role="@r" asp-route-search="@ViewBag.Search">@r</a>
     }
     <a class="btn btn-sm btn-teal ms-auto" asp-action="AddUser">+ Add doctor / assistant</a>
 </div>
+
+<!-- search box (keeps the chosen role) -->
+<form class="toolbar" method="get" asp-action="Users">
+    <input type="hidden" name="role" value="@selected" />
+    <input class="form-control search" name="search" value="@ViewBag.Search" placeholder="Search by ID, name, phone or email" />
+    <button class="btn btn-teal" type="submit">Search</button>
+    @if (!string.IsNullOrWhiteSpace((string?)ViewBag.Search))
+    {
+        <a class="btn btn-outline-teal" asp-action="Users" asp-route-role="@selected">Clear</a>
+    }
+</form>
 
 <div class="panel">
     <table class="table align-middle">

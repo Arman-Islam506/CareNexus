@@ -45,16 +45,29 @@ public class AdminController : Controller
     // ===================== USERS =====================
 
     // /Admin/Users or /Admin/Users?role=Doctor
-    public IActionResult Users(string? role)
+    // /Admin/Users?role=Doctor&search=rahman
+    public IActionResult Users(string? role, string? search)
     {
         List<User> users = _db.Users.Find(u => true).ToList();
 
+        // filter by role (the buttons)
         if (!string.IsNullOrEmpty(role))
         {
             users = users.Where(u => u.Role == role).ToList();
         }
 
+        // search by ID, name, phone or email
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string text = search.Trim().ToLower();
+            users = users.Where(u => (u.LoginId ?? "").ToLower().Contains(text)
+                                  || u.Name.ToLower().Contains(text)
+                                  || (u.Phone ?? "").ToLower().Contains(text)
+                                  || u.Email.ToLower().Contains(text)).ToList();
+        }
+
         ViewBag.Role = role;
+        ViewBag.Search = search;
         return View(users.OrderBy(u => u.Role).ThenBy(u => u.Name).ToList());
     }
 
@@ -161,9 +174,20 @@ public class AdminController : Controller
 
     // ===================== DEPARTMENTS =====================
 
-    public IActionResult Departments()
+    // /Admin/Departments?search=card
+    public IActionResult Departments(string? search)
     {
-        return View(_db.AllDepartments());
+        List<Department> departments = _db.AllDepartments();
+
+        // search by department name
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string text = search.Trim().ToLower();
+            departments = departments.Where(d => d.Name.ToLower().Contains(text)).ToList();
+        }
+
+        ViewBag.Search = search;
+        return View(departments);
     }
 
     [HttpPost]
